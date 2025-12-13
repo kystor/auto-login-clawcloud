@@ -3,9 +3,7 @@ name: ClawCloud Run Auto Login (2FA Support)
 
 on:
   schedule:
-    # 计划任务：每 15 天执行一次 (每月 1号 和 16号 的 UTC 0点)
     - cron: '0 0 */15 * *'
-  # 允许手动触发 (方便测试)
   workflow_dispatch:
 
 jobs:
@@ -13,37 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 下载代码
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. 准备 Python 环境
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. 安装依赖
-      # pyotp: 用于生成 2FA 验证码
-      # playwright: 浏览器自动化
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install playwright pyotp
           playwright install chromium
 
-      # 4. 运行登录脚本
       - name: Run Login Script
         env:
-          # 从 Secrets 注入环境变量
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-        run: python login_script.py
+        
+        run: python -u login_script.py
 
-      # 5. 上传截图 (仅在调试或失败时查看)
       - name: Upload Debug Screenshot
-        if: always() # 无论成功失败都执行
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: login-result
