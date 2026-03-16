@@ -19,7 +19,6 @@ jobs:
         with:
           python-version: '3.9'
 
-      # 【终极杀招 1：安装虚拟显示器环境】
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -28,16 +27,17 @@ jobs:
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          # 【新增】安装 playwright-stealth 隐身插件
           pip install playwright pyotp playwright-stealth
           playwright install chromium
+          # 【极其关键的新增代码】让 Playwright 自动把 Ubuntu 服务器缺失的图形界面底层依赖全装上！
+          playwright install-deps chromium
 
       - name: Run Login Script
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-        # 【终极杀招 2：用 xvfb-run 模拟真实桌面环境运行 Python，强制带上 -u 参数输出日志】
+        # 带有 -u 参数，确保子进程输出不被屏蔽，实时打印日志
         run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python -u login_script.py
 
       - name: Upload Debug Screenshots
