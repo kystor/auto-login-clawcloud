@@ -1,56 +1,41 @@
-# 文件名: .github/workflows/clawcloud-login.yml
-# 作用: 告诉 GitHub Actions 什么时候、以什么环境来运行我们的 Python 脚本
 name: ClawCloud Run Auto Login (2FA Support)
 
 on:
   schedule:
-    # 这是一个定时任务配置，目前设置的是每 15 天的 0点0分 自动运行一次
     - cron: '0 0 */15 * *'
-  # 这个选项允许你在 GitHub 网页的 Actions 界面上手动点击运行按钮
   workflow_dispatch:
 
 jobs:
   auto-login:
-    # 指定运行这段代码的虚拟服务器系统为最新版的 Ubuntu Linux
     runs-on: ubuntu-latest
 
     steps:
-      # [需要更新的地方] 拉取你的代码仓库
       - name: Checkout repository
-        # 将 v3 升级为最新的 v4 版本，解决 Node.js 老版本警告
         uses: actions/checkout@v4
 
-      # [需要更新的地方] 安装 Python 环境
       - name: Set up Python
-        # 将 v4 升级为最新的 v5 版本，提供更稳定、更新的底层环境
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
-      # 安装我们在 Python 脚本中需要用到的第三方依赖库
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install playwright pyotp
           playwright install chromium
 
-      # 运行我们的登录脚本
       - name: Run Login Script
-        # 从你的 GitHub Secrets 中把密码和密钥提取出来，作为环境变量传给代码
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-        # 加上 -u 参数可以强制 Python 实时输出打印内容，不进行缓冲，方便我们在日志里立刻看到进度
+        # 保持你的习惯，带有 -u 参数以保证输出不被屏蔽
         run: python -u login_script.py
 
-      # 这一步负责把脚本执行完生成的截图上传到网页上
-      - name: Upload Debug Screenshot
-        # if: always() 的意思是：不管前面的脚本是成功了还是报错退出了，这一步都必须执行！
-        # 这样能确保我们哪怕失败了，也能拿到报错时的画面
+      # 【重点修改这里】打包上传所有的 PNG 截图
+      - name: Upload Debug Screenshots
         if: always()
-        # 目前 v4 已经是最新版
         uses: actions/upload-artifact@v4
         with:
-          name: login-result
-          path: login_result.png
+          name: all-debug-screenshots
+          path: "*.png"
